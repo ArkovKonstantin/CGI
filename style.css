@@ -1,0 +1,17 @@
+table{
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+    /* border: 1px solid black; */
+    width: auto;    
+}
+
+
+td,th{
+    border: 1px solid #ddd;
+    padding: 5px;
+    /* border-radius: 3px; */
+  }
+  th{
+    background: #E4E4E4;
+  }
