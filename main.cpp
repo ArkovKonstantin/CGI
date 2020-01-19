@@ -24,6 +24,9 @@ public:
     vector<string> getPostData(){
         return postData;
     }
+    string getMethod(){
+        return method;
+    }
     
 private:
     string data;
@@ -80,6 +83,24 @@ public:
         output << record << endl;
         
     }
+    void del(string id){
+        vector<vector<string>> dbData = readAll();
+        string record;
+        ofstream output(filePath);
+        for (const auto& row:dbData){
+            if (row[0] != id){
+                for (int i = 0; i < row.size(); ++i){
+                    record += row[i];
+                    if (i < row.size()-1){
+                        record += delimiter;
+                    }       
+                }
+                output << record << endl;
+                record.clear();
+            }
+        }
+
+    }
     vector<vector<string>> readAll(){
         ifstream input(filePath);
         string row;
@@ -108,18 +129,21 @@ public:
         HTTP req;
         string route;
         route = req.getPathInfo();
-        if (route == "/add"){
+        string method = req.getMethod();
+        if (method == "POST"){
             DataBase db("db");
             vector<string> postData = req.getPostData();
-            db.add(postData);
+            if (route == "/add"){    
+                db.add(postData);
+            }else if(route == "/del"){
+                db.del(postData[0]);
+            }
         }
         render("index.html");
         for (auto el : req.getPostData()){
             cout << el << endl;
         }
-    }
-
-    
+    } 
 private:
     void render(const string& filename){
         DataBase db("db");
@@ -137,12 +161,17 @@ private:
                         cout << "DataBase is empty" << endl;
                     }else{
                         for (const auto& row: DbData){
-                        cout << "<tr>" << endl;
+                            cout << "<form action='http://localhost/cgi-bin/main.cgi/del' method='POST'>" << endl;
+                            cout << "<tr>" << endl;
                             for (const auto& col : row){
                                 cout << "<td>" << col << "</td>" << endl;
                             }
+                            cout << "<td style='border: none;'><input type='submit' value='Del'></td>" << endl;
+                            cout << "<td style='display:none;'><input type='text' name='p' value='"<< row[0] << "'></td>" << endl;
+                            cout << "</tr>" << endl;
+                            cout << "</form>" << endl;
+
                         }
-                        cout << "</tr>" << endl;
                     }
                 }
             }
