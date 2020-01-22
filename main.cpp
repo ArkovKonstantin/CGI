@@ -3,29 +3,23 @@
 #include <string>
 #include <vector>
 #include <sstream>
-
+#include <map>
 // std :: hex 
 using namespace std;
 
 class HTTP{
 public:
-    HTTP(){
-        method = getenv("REQUEST_METHOD");
-        if (method == "POST"){
-            cin >> data;
-            data += '&';
-            postData = split(data);
-            pathInfo = getenv("PATH_INFO");
+    HTTP(char **env){
+        headers = setHeaders(env);
+        if (headers["REQUEST_METHOD"] == "POST"){
+            processRequestBody();
         }
-    }
-    string getPathInfo(){
-        return pathInfo;
     }
     vector<string> getPostData(){
         return postData;
     }
-    string getMethod(){
-        return method;
+    string getHeader(const string& name){
+        return headers[name];
     }
     
 private:
@@ -33,6 +27,7 @@ private:
     string method;
     string pathInfo;
     vector<string> postData;
+    map<string, string> headers;
 
     string urlDecode(string str){
         string ret;
@@ -72,6 +67,24 @@ private:
             }
         }
         return postData;
+    }
+    map<string, string> setHeaders(char **env){
+        map<string,string> headers;
+        ofstream output("requestHeaders.text");
+        while (*env){
+            string s = *env++;
+            output << s << endl;
+            string key = s.substr(0, s.find('='));
+            string val = s.substr(s.find('=')+1);
+            headers[key] = val;
+        }
+        output.close();
+        return headers;
+    }
+    void processRequestBody(){
+        cin >> data;
+        data += '&';
+        postData = split(data);
     }
 };
 
@@ -145,37 +158,47 @@ private:
 
 class Application{
 public:
-    Application(){
-        HTTP req;
-        string route;
-        route = req.getPathInfo();
-        string method = req.getMethod();
+    Application(HTTP req){
+        string route = req.getHeader("PATH_INFO");
+        string method = req.getHeader("REQUEST_METHOD");
+        // cout << "Content-type:text/html\r\n\r\n";
+        // cout << "hello" << endl;
         if (method == "POST"){
             DataBase db("db");
             vector<string> postData = req.getPostData();
             if (route == "/add"){    
                 db.add(postData);
+                render("index.html");
             }else if(route == "/del"){
                 db.del(postData[0]);
+                render("index.html");
+            }else if(route == "/upload"){
+                // загрузка файлов
+                string line;
+                ofstream output("file.txt");
+                while(getline(cin , line)){
+                    output << line << endl;
+                }
+                output.close();
+                render("uploadFiles.html"); 
+            }
+        }else if(method == "GET"){
+            if (route == "/upload"){
+                render("uploadFiles.html");
+            }else if (route == ""){
+                render("index.html");
             }
         }
-        render("index.html");
+        // cout << req.getPathInfo() << endl;
         for (auto el : req.getPostData()){
             cout << el << endl;
         }
     } 
 private:
-    void render(const string& filename){
+    void fun(const string& line, bool& first){
         DataBase db("db");
         DbData = db.readAll();
-        ifstream input(filename);
-        string line;
-        bool first = true;
-        cout << "Content-type:text/html\r\n\r\n";
-        if (input){
-            while(getline(input, line)){
-                cout << line << endl;
-                if (line == "                    </tr>" && first == true){
+        if (line == "                    </tr>" && first == true){
                     first = false;
                     if (DbData.empty()){
                         cout << "DataBase is empty" << endl;
@@ -194,6 +217,19 @@ private:
                         }
                     }
                 }
+
+    }
+    void render(const string& filename){
+        ifstream input(filename);
+        string line;
+        bool first = true;
+        cout << "Content-type:text/html\r\n\r\n";
+        if (input){
+            while(getline(input, line)){
+                cout << line << endl;
+                if (filename == "index.html"){
+                    fun(line, first);
+                }
             }
         }
 
@@ -202,7 +238,8 @@ private:
 };
 
 
-int main(){
-    Application myApp;
+int main(int argc, char **argv, char** env){
+    HTTP req(env);
+    Application myApp(req);
     return -1;
 }
