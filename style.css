@@ -1,17 +1,55 @@
+body, html{
+  font-size: 14px;
+  font-family: "-apple-system",BlinkMacSystemFont,Arial,sans-serif;
+}
 table{
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
-    /* border: 1px solid black; */
-    width: auto;    
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  /* border: 1px solid black; */
+  width: auto;    
+}
+td,th{
+  border: 1px solid #ddd;
+  padding: 5px;
+  /* border-radius: 3px; */
+}
+th{
+  background: #E4E4E4;
+}
+ul {
+  list-style-type: none;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0px;
+  overflow: hidden;
+  background-color: #333;
+  width: 700px;
 }
 
+li {
+  float: left;
+}
+li a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+li a:hover {
+  background-color: #111;
+}
 
-td,th{
-    border: 1px solid #ddd;
-    padding: 5px;
-    /* border-radius: 3px; */
-  }
-  th{
-    background: #E4E4E4;
-  }
+/* 
+input{
+  display: block;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.files{
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+} */
