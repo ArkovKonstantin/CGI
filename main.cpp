@@ -68,6 +68,41 @@ private:
         }
         return postData;
     }
+    string strip(string s, char ch = ' '){
+        bool sFlag = true;
+        bool eFlag = true;
+        int sIdx = 0;
+        int eIdx = s.size();
+        while(sFlag != false || eFlag != false){
+            if(sFlag == true && s[sIdx] == ch){
+                sIdx++;
+            }else{
+                sFlag = false;
+            }
+            if(eFlag == true && s[eIdx - 1] == ch){
+                eIdx--;
+            }else{
+                eFlag = false;
+            }
+        }
+        return s.substr(sIdx, eIdx-sIdx);
+    }
+    map<string,string> split2(string s, char d1, char d2){
+        map<string, string> splitedData;
+        istringstream stream1(s);
+        string line;
+        while(getline(stream1, line, d2)){
+            line = strip(line);
+            istringstream stream2(line);
+            string key;
+            string val;
+            getline(stream2, key, d1);
+            getline(stream2, val, d1);
+            splitedData[key] = val;
+        }
+        return splitedData;
+    }   
+    
     map<string, string> setHeaders(char **env){
         map<string,string> headers;
         ofstream output("requestHeaders.text");
@@ -82,9 +117,39 @@ private:
         return headers;
     }
     void processRequestBody(){
-        cin >> data;
-        data += '&';
-        postData = split(data);
+        string contentType = headers["CONTENT_TYPE"];
+        if (contentType.find("multipart/form-data") != -1){
+            // Загрузка файла
+            string line;
+            getline(cin, line);
+            string boundary = line.erase(line.size()-1);
+            while (getline(cin, line)){
+                string disposition = line.substr(32, line.size()-33);
+                map<string, string> m = split2(disposition, '=', ';');
+                string fn = strip(m["filename"], '\"');
+                if (fn != ""){
+                    string path = "./files/" + fn;
+                    ofstream output(path, ios_base::binary);
+                    getline(cin, line);
+                    string cType = line; //TODO mime type
+                    getline(cin, line); // empty string
+                    getline(cin, line); // body
+                    while(line.find(boundary) == -1){
+                        output << line << endl;
+                        getline(cin, line);
+                    }
+                    output.close();
+                }else{
+                    while(line.find(boundary) == -1){
+                        getline(cin, line);
+                    }
+                }
+            } 
+        }else{
+            cin >> data;
+            data += '&';
+            postData = split(data); // TODO split2
+        }    
     }
 };
 
@@ -132,7 +197,6 @@ public:
                 record.clear();
             }
         }
-
     }
     vector<vector<string>> readAll(){
         ifstream input(filePath);
@@ -161,8 +225,6 @@ public:
     Application(HTTP req){
         string route = req.getHeader("PATH_INFO");
         string method = req.getHeader("REQUEST_METHOD");
-        // cout << "Content-type:text/html\r\n\r\n";
-        // cout << "hello" << endl;
         if (method == "POST"){
             DataBase db("db");
             vector<string> postData = req.getPostData();
@@ -174,12 +236,12 @@ public:
                 render("index.html");
             }else if(route == "/upload"){
                 // загрузка файлов
-                string line;
-                ofstream output("file.txt");
-                while(getline(cin , line)){
-                    output << line << endl;
-                }
-                output.close();
+                // string line;
+                // ofstream output("file.txt");
+                // while(getline(cin , line)){
+                //     output << line << endl;
+                // }
+                // output.close();
                 render("uploadFiles.html"); 
             }
         }else if(method == "GET"){
@@ -187,6 +249,8 @@ public:
                 render("uploadFiles.html");
             }else if (route == ""){
                 render("index.html");
+            }else if (route == "/files"){
+                // TODO Список файлов
             }
         }
         // cout << req.getPathInfo() << endl;
