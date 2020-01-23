@@ -4,8 +4,12 @@
 #include <vector>
 #include <sstream>
 #include <map>
+#include <experimental/filesystem>
+#include "utils.h"
 // std :: hex 
 using namespace std;
+namespace fs = std::experimental::filesystem;
+
 
 class HTTP{
 public:
@@ -16,7 +20,11 @@ public:
         }
     }
     vector<string> getPostData(){
-        return postData;
+        vector<string> vals;
+        for (const auto& el: postData){
+            vals.push_back(urlDecode(el.second));
+        }
+        return vals;
     }
     string getHeader(const string& name){
         return headers[name];
@@ -26,7 +34,7 @@ private:
     string data;
     string method;
     string pathInfo;
-    vector<string> postData;
+    map<string, string> postData;
     map<string, string> headers;
 
     string urlDecode(string str){
@@ -49,60 +57,6 @@ private:
         }
         return ret;
     }
-    vector<string> split(const string& data){
-        vector<string> postData;
-        string p;
-        bool flag;
-        for (auto ch : data){
-            if (ch == '='){
-                flag = true;
-                continue;
-            }else if(ch == '&'){
-                flag = false;
-                postData.push_back(urlDecode(p));
-                p = "";
-            }
-            if (flag == true){
-                p += ch;
-            }
-        }
-        return postData;
-    }
-    string strip(string s, char ch = ' '){
-        bool sFlag = true;
-        bool eFlag = true;
-        int sIdx = 0;
-        int eIdx = s.size();
-        while(sFlag != false || eFlag != false){
-            if(sFlag == true && s[sIdx] == ch){
-                sIdx++;
-            }else{
-                sFlag = false;
-            }
-            if(eFlag == true && s[eIdx - 1] == ch){
-                eIdx--;
-            }else{
-                eFlag = false;
-            }
-        }
-        return s.substr(sIdx, eIdx-sIdx);
-    }
-    map<string,string> split2(string s, char d1, char d2){
-        map<string, string> splitedData;
-        istringstream stream1(s);
-        string line;
-        while(getline(stream1, line, d2)){
-            line = strip(line);
-            istringstream stream2(line);
-            string key;
-            string val;
-            getline(stream2, key, d1);
-            getline(stream2, val, d1);
-            splitedData[key] = val;
-        }
-        return splitedData;
-    }   
-    
     map<string, string> setHeaders(char **env){
         map<string,string> headers;
         ofstream output("requestHeaders.text");
@@ -125,7 +79,7 @@ private:
             string boundary = line.erase(line.size()-1);
             while (getline(cin, line)){
                 string disposition = line.substr(32, line.size()-33);
-                map<string, string> m = split2(disposition, '=', ';');
+                map<string, string> m = split(disposition, '=', ';');
                 string fn = strip(m["filename"], '\"');
                 if (fn != ""){
                     string path = "./files/" + fn;
@@ -147,8 +101,7 @@ private:
             } 
         }else{
             cin >> data;
-            data += '&';
-            postData = split(data); // TODO split2
+            postData = split(data, '=', '&'); // TODO split2
         }    
     }
 };
@@ -230,10 +183,10 @@ public:
             vector<string> postData = req.getPostData();
             if (route == "/add"){    
                 db.add(postData);
-                render("index.html");
-            }else if(route == "/del"){
+                render("users.html");
+            }else if(route == "/delUser"){
                 db.del(postData[0]);
-                render("index.html");
+                render("users.html");
             }else if(route == "/upload"){
                 // загрузка файлов
                 // string line;
@@ -242,46 +195,77 @@ public:
                 //     output << line << endl;
                 // }
                 // output.close();
-                render("uploadFiles.html"); 
+                render("files.html"); 
+            }else if(route == "/delFile"){
+                // TODO
             }
         }else if(method == "GET"){
             if (route == "/upload"){
-                render("uploadFiles.html");
+                render("files.html");
             }else if (route == ""){
-                render("index.html");
+                render("users.html");
             }else if (route == "/files"){
                 // TODO Список файлов
+                cout << "Content-type:text/html\r\n\r\n";
+                for(auto& p: fs::directory_iterator("files")){
+                    cout << p << " ";
+                    try {
+                        cout << fs::file_size(p) <<" bytes"<< "<br>"; // attempt to get size of a directory
+                    }catch(fs::filesystem_error& e) {
+                        cout << e.what() << "<br>";
+                    }   
+                }
             }
         }
         // cout << req.getPathInfo() << endl;
-        for (auto el : req.getPostData()){
-            cout << el << endl;
-        }
+        // for (auto el : req.getPostData()){
+        //     cout << el << endl;
+        // }
     } 
 private:
-    void fun(const string& line, bool& first){
+    void renderUsers(const string& line, bool& first){
         DataBase db("db");
         DbData = db.readAll();
-        if (line == "                    </tr>" && first == true){
+        if (line == "            </tr>" && first == true){
                     first = false;
                     if (DbData.empty()){
                         cout << "DataBase is empty" << endl;
                     }else{
                         for (const auto& row: DbData){
-                            cout << "<form action='http://localhost/cgi-bin/main.cgi/del' method='POST'>" << endl;
+                            cout << "<form action='http://localhost/cgi-bin/main.cgi/delUser' method='POST'>" << endl;
                             cout << "<tr>" << endl;
                             for (const auto& col : row){
                                 cout << "<td>" << col << "</td>" << endl;
                             }
                             cout << "<td style='border: none;'><input type='submit' value='Del'></td>" << endl;
-                            cout << "<td style='display:none;'><input type='text' name='p' value='"<< row[0] << "'></td>" << endl;
+                            cout << "<td style='display:none;'><input type='text' name='p4' value='"<< row[0] << "'></td>" << endl;
                             cout << "</tr>" << endl;
                             cout << "</form>" << endl;
 
                         }
                     }
                 }
+    }
+    void renderFiles(const string& line, bool& first){
+        bool empty = true;
+        if (line == "            </tr>" && first == true){
+            for (auto& p : fs::directory_iterator(filesDir)){
+                empty = false;
+                cout << "<form action='http://localhost/cgi-bin/main.cgi/delFile' method='POST'>" << endl;
+                cout << "<tr>" << endl;
+                cout << "<td>" << strip(p.path(), '\"').substr(filesDir.size()+1) << "</td>" << endl;
+                cout << "<td>" << fs::file_size(p) << " bytes" << "</td>" << endl;
+                cout << "<td style='border: none;'><input type='submit' value='Del'></td>" << endl;
+                cout << "<td style='display:none;'><input type='text' name='p' value='"<< p << "'></td>" << endl;
+                cout << "</tr>" << endl;
+                cout << "</form>" << endl;
 
+            }
+            first = false;
+            if (empty == true){
+                cout << "</table><h4>Dir is empty</h4>";
+            }
+        }
     }
     void render(const string& filename){
         ifstream input(filename);
@@ -291,14 +275,17 @@ private:
         if (input){
             while(getline(input, line)){
                 cout << line << endl;
-                if (filename == "index.html"){
-                    fun(line, first);
+                if (filename == "users.html"){
+                    renderUsers(line, first);
+                }else if(filename == "files.html"){
+                    renderFiles(line, first);
                 }
             }
         }
 
     }
     vector<vector<string>> DbData;
+    string filesDir = "files";
 };
 
 
