@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <title>Files</title>
+</head>
+<body>
+    <ul>
+        <li><a href="http://localhost/cgi-bin/main.cgi">Users</a></li>
+        <li><a href="http://localhost/cgi-bin/main.cgi/files">Files</a></li>
+    </ul>
+    <div class="files">
+        <h3>Список файлов</h3>
+        <table>
+            <tr>
+                <th>File Name</th>
+                <th>Size</th>
+            </tr>
+        </table>
+        <form action="http://localhost/cgi-bin/main.cgi/files" enctype="multipart/form-data" method="POST">
+            <div class="upload">
+                <h3>Загрузка файлов</h3>
+                <input type="file" name="file1">
+                <input type="file" name="file2">
+                <input type="file" name="file3">
+                <input type="file" name="file4">
+                <input type="submit" value="upload">
+            </div>
+        </form>
+    </div>
+</body>
+</html>

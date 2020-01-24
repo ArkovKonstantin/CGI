@@ -1,7 +1,5 @@
 #include "utils.h"
-#include <string>
-#include <sstream>
-using namespace std;
+
 
 string strip(string s, char ch = ' '){
         bool sFlag = true;

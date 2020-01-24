@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="/style.css">
+    <title>Users</title>
+</head>
+<body>
+    <ul>
+        <li><a href="http://localhost/cgi-bin/main.cgi">Users</a></li>
+        <li><a href="http://localhost/cgi-bin/main.cgi/upload">Files</a></li>
+    </ul>
+    <table>
+            <tr>
+                <th>id</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Age</th>
+            </tr>
+            <form action="http://localhost/cgi-bin/main.cgi/add" method="POST" enctype="application/x-www-form-urlencoded">
+            <tr>
+                <td style="border: none;"></td>
+                <td style="border: none;"><input type="text" name="p1"></td>
+                <td style="border: none;"><input type="text" name="p2"></td>
+                <td style="border: none;"><input type="text" name="p3"></td>
+            </tr>
+            <tr>
+                <td style="border: none;"></td>
+                <td style="border: none;"></td>
+                <td style="border: none;"><input type="submit" value=Add></td>
+                <td style="border: none;"></td>
+            </tr>
+            </form>
+    </table>    
+
+</body>
+</html>
