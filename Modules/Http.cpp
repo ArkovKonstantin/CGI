@@ -3,6 +3,7 @@
 
 HTTP::HTTP(char **env){
     headers = setHeaders(env);
+    cookie = setCookie(headers["HTTP_COOKIE"]);
     if (headers["REQUEST_METHOD"] == "POST"){
         processRequestBody();
     }
@@ -19,7 +20,11 @@ vector<string> HTTP::getPostData(){
 string HTTP::getHeader(const string& name){
     return headers[name];
 }
-    
+
+string HTTP::getCookie(const string& key){
+    return cookie[key];
+} 
+
 string HTTP::urlDecode(string str){
     string ret;
     char ch;
@@ -52,6 +57,13 @@ map<string, string> HTTP::setHeaders(char **env){
     }
     output.close();
     return headers;
+}
+map<string, string> HTTP::setCookie(const string& data){
+    map<string, string> cookie;
+    if (data != ""){
+        cookie = split(data, '=', ';'); 
+    }
+    return cookie;
 }
 
 void HTTP::processRequestBody(){

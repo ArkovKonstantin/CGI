@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "Modules/Headers/DataBase.h"
 #include "Modules/Headers/Http.h"
+#include "Modules/Headers/Session.h"
+
 
 
 using namespace std;
@@ -15,7 +17,7 @@ namespace fs = std::experimental::filesystem;
 
 class Application{
 public:
-    Application(HTTP req){
+    Application(HTTP req){ 
         string route = req.getHeader("PATH_INFO");
         string method = req.getHeader("REQUEST_METHOD");
         if (method == "POST"){
@@ -27,7 +29,7 @@ public:
             }else if(route == "/delUser"){
                 db.del(postData[0]);
                 render("users.html");
-            }else if(route == "/upload"){
+            }else if(route == "/files"){
                 render("files.html"); 
             }else if(route == "/delFile"){
                 string fn = strip(postData[0], '\"');
@@ -37,8 +39,22 @@ public:
         }else if(method == "GET"){
             if (route == "/files"){
                 render("files.html");
+            }else if (route == "/login"){
+                Session session;
+                string ipAddress = req.getHeader("REMOTE_ADDR");
+                string uuid = session.set(ipAddress);
+                map<string, string> cookie = {{"sessionId", uuid}};
+                render("login.html", cookie);
             }else if (route == ""){
-                render("users.html");
+                Session session;
+                string sessionId = req.getCookie("sessionId");
+                string ipAddress = session.get(sessionId);
+                if (req.getHeader("REMOTE_ADDR") == ipAddress){
+                    render("users.html");
+                }else{
+                    cout << "Content-type:text/html\r\n\r\n";
+                    cout << "<center><p>login required</p></center>" << "<br>";
+                }
             }
         }
     } 
@@ -87,11 +103,15 @@ private:
             }
         }
     }
-    void render(const string& filename){
+    void render(const string& filename, map<string, string> cookie = {}){
         ifstream input(filename);
         string line;
         bool first = true;
-        cout << "Content-type:text/html\r\n\r\n";
+        cout << "Content-type:text/html" << endl;
+        for (const auto& el:cookie){
+            cout << "Set-Cookie:" << el.first << '=' << el.second << endl;
+        }
+        cout << "\r\n\r\n";
         if (input){
             while(getline(input, line)){
                 cout << line << endl;
